@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 
+from taggit.models import Tag
+
 from .models import Post, Comment
 from .forms import CommentForm
 
@@ -11,8 +13,12 @@ class PostListView(ListView):
     paginate_by = 3
     template_name = 'blog/post/list.html'
 
-def post_list(request):
+def post_list(request, slug=None):
     object_list = Post.objects.filter(status='published')
+    tag = None
+    if slug:
+        tag = get_object_or_404(Tag, slug=slug)
+        object_list = object_list.filter(tags__in=[tag])
     paginator = Paginator(object_list, 3)  # 3 posts in each page
     page = request.GET.get('page')
     try:
@@ -26,7 +32,9 @@ def post_list(request):
     return render(request,
                   'blog/post/list.html',
                   {'page': page,
-                   'posts': posts})
+                   'posts': posts,
+                   'tag': tag
+                   })
 
 
 def post_detail(request, slug):
